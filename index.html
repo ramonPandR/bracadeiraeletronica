@@ -1,42 +1,100 @@
-async function atualizarGPS() {
-  try {
-    const res = await fetch(url);
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Rastreador GPS</title>
 
-    if (!res.ok) {
-      throw new Error("HTTP error " + res.status);
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      text-align: center;
     }
 
-    const data = await res.json();
+    #map {
+      height: 90vh;
+      width: 100%;
+    }
 
-    if (!data) {
+    #status {
+      padding: 5px;
+      background: #eee;
+      font-size: 14px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h3>📡 Rastreador GPS</h3>
+<div id="status">Inicializando...</div>
+<div id="map"></div>
+
+<script>
+  // 🗺️ MAPA (garantido que sempre inicializa)
+  const map = L.map('map').setView([-15.78, -47.93], 5);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+
+  let marker = null;
+
+  const url = "https://bracadeiratcc-default-rtdb.firebaseio.com/gps.json";
+
+  async function atualizarGPS() {
+    try {
+      const res = await fetch(url);
+
+      if (!res.ok) {
+        document.getElementById("status").innerText =
+          "❌ Firebase respondeu erro: " + res.status;
+        return;
+      }
+
+      const data = await res.json();
+
+      if (!data) {
+        document.getElementById("status").innerText =
+          "⚠️ Sem dados no Firebase";
+        return;
+      }
+
+      const chaves = Object.keys(data);
+      const ultima = chaves[chaves.length - 1];
+      const gps = data[ultima];
+
+      const lat = parseFloat(gps.lat);
+      const lng = parseFloat(gps.lng);
+
+      const pos = [lat, lng];
+
+      if (!marker) {
+        marker = L.marker(pos).addTo(map);
+      } else {
+        marker.setLatLng(pos);
+      }
+
+      map.setView(pos, 18);
+
       document.getElementById("status").innerText =
-        "⚠️ Firebase vazio";
-      return;
+        `📍 ${lat.toFixed(6)} | ${lng.toFixed(6)}`;
+
+    } catch (err) {
+      console.error(err);
+      document.getElementById("status").innerText =
+        "❌ Erro de conexão com Firebase (ver console)";
     }
-
-    const chaves = Object.keys(data);
-    const ultimaChave = chaves[chaves.length - 1];
-    const ultimoDado = data[ultimaChave];
-
-    const lat = parseFloat(ultimoDado.lat);
-    const lng = parseFloat(ultimoDado.lng);
-
-    const pos = [lat, lng];
-
-    if (!marker) {
-      marker = L.marker(pos).addTo(map);
-    } else {
-      marker.setLatLng(pos);
-    }
-
-    map.setView(pos, 18);
-
-    document.getElementById("status").innerText =
-      `📍 ${lat} | ${lng}`;
-
-  } catch (err) {
-    console.error(err);
-    document.getElementById("status").innerText =
-      "❌ Erro ao buscar Firebase (ver console)";
   }
-}
+
+  // 🔄 atualiza sem travar o site
+  setInterval(atualizarGPS, 3000);
+
+  atualizarGPS();
+</script>
+
+</body>
+</html>
