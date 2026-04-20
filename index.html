@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Rastreador GPS</title>
 
+  <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
@@ -12,49 +13,50 @@
       margin: 0;
       font-family: Arial;
       text-align: center;
+      background: #f2f2f2;
+    }
+
+    h3 {
+      margin: 10px;
+    }
+
+    #status {
+      padding: 6px;
+      background: #eee;
+      font-size: 14px;
     }
 
     #map {
       height: 90vh;
       width: 100%;
     }
-
-    #status {
-      padding: 5px;
-      background: #eee;
-      font-size: 14px;
-    }
   </style>
 </head>
 
 <body>
 
-<h3>📡 Rastreador GPS</h3>
+<h3>📡 Rastreador GPS em Tempo Real</h3>
 <div id="status">Inicializando...</div>
+
 <div id="map"></div>
 
 <script>
-  // 🗺️ MAPA (garantido que sempre inicializa)
+  // 🗺️ mapa inicial (Brasil)
   const map = L.map('map').setView([-15.78, -47.93], 5);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap'
   }).addTo(map);
 
+  // 📍 marcador
   let marker = null;
 
+  // 🔥 Firebase URL
   const url = "https://bracadeiratcc-default-rtdb.firebaseio.com/gps.json";
 
   async function atualizarGPS() {
     try {
-      const res = await fetch(url);
-
-      if (!res.ok) {
-        document.getElementById("status").innerText =
-          "❌ Firebase respondeu erro: " + res.status;
-        return;
-      }
-
+      const res = await fetch(url, { cache: "no-store" });
       const data = await res.json();
 
       if (!data) {
@@ -63,15 +65,26 @@
         return;
       }
 
+      // 🔥 pega último registro (push)
       const chaves = Object.keys(data);
-      const ultima = chaves[chaves.length - 1];
-      const gps = data[ultima];
+      const ultimaChave = chaves[chaves.length - 1];
+      const gps = data[ultimaChave];
+
+      console.log("GPS bruto:", gps);
 
       const lat = parseFloat(gps.lat);
       const lng = parseFloat(gps.lng);
 
+      // 🚨 proteção contra erro NaN
+      if (isNaN(lat) || isNaN(lng)) {
+        document.getElementById("status").innerText =
+          "⚠️ GPS inválido (NaN)";
+        return;
+      }
+
       const pos = [lat, lng];
 
+      // 📍 cria ou atualiza marcador
       if (!marker) {
         marker = L.marker(pos).addTo(map);
       } else {
@@ -81,18 +94,17 @@
       map.setView(pos, 18);
 
       document.getElementById("status").innerText =
-        `📍 ${lat.toFixed(6)} | ${lng.toFixed(6)}`;
+        `📍 Latitude: ${lat.toFixed(6)} | Longitude: ${lng.toFixed(6)}`;
 
     } catch (err) {
       console.error(err);
       document.getElementById("status").innerText =
-        "❌ Erro de conexão com Firebase (ver console)";
+        "❌ Erro ao acessar Firebase";
     }
   }
 
-  // 🔄 atualiza sem travar o site
+  // 🔄 atualização automática (3s)
   setInterval(atualizarGPS, 3000);
-
   atualizarGPS();
 </script>
 
