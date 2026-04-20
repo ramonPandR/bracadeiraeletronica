@@ -1,39 +1,76 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>GPS Tracker</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+  <meta charset="UTF-8">
+  <title>Rastreador GPS</title>
+
+  <!-- Leaflet (mapa) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+    }
+    #map {
+      height: 500px;
+      width: 100%;
+      margin-top: 10px;
+    }
+  </style>
 </head>
 
 <body>
 
-<h2>GPS em tempo real</h2>
-<div id="map" style="height: 400px;"></div>
+<h2>📡 Rastreador GPS em Tempo Real</h2>
+<p id="status">Aguardando dados...</p>
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<div id="map"></div>
 
 <script>
-const map = L.map('map').setView([0, 0], 15);
+  // 🗺️ Criar mapa
+  const map = L.map('map').setView([0, 0], 15);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: 'GPS Tracker'
+  }).addTo(map);
 
-let marker = L.marker([0,0]).addTo(map);
+  // 📍 marcador do GPS
+  let marker = L.marker([0, 0]).addTo(map);
 
-const url = "https://bracadeiratcc-default-rtdb.firebaseio.com/gps.json";
+  // 🔥 Firebase URL (SEU BANCO)
+  const url = "https://bracadeiratcc-default-rtdb.firebaseio.com/gps.json";
 
-async function atualizar() {
-  const res = await fetch(url);
-  const data = await res.json();
+  async function atualizarGPS() {
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
 
-  if (data) {
-    const pos = [data.lat, data.lng];
-    marker.setLatLng(pos);
-    map.setView(pos);
+      if (data && data.lat && data.lng) {
+        const pos = [data.lat, data.lng];
+
+        marker.setLatLng(pos);
+        map.setView(pos);
+
+        document.getElementById("status").innerText =
+          "📍 Lat: " + data.lat + " | Lng: " + data.lng;
+      } else {
+        document.getElementById("status").innerText =
+          "⚠️ Sem dados do GPS";
+      }
+
+    } catch (err) {
+      document.getElementById("status").innerText =
+        "❌ Erro ao buscar dados";
+    }
   }
-}
 
-setInterval(atualizar, 5000);
-atualizar();
+  // 🔄 atualiza a cada 5 segundos (igual seu ESP32 manda)
+  setInterval(atualizarGPS, 5000);
+
+  // primeira execução
+  atualizarGPS();
 </script>
 
 </body>
