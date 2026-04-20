@@ -1,111 +1,42 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Rastreador GPS</title>
+async function atualizarGPS() {
+  try {
+    const res = await fetch(url);
 
-  <!-- Leaflet -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial;
-      text-align: center;
-      background: #f2f2f2;
+    if (!res.ok) {
+      throw new Error("HTTP error " + res.status);
     }
 
-    h2 {
-      margin: 10px;
-    }
+    const data = await res.json();
 
-    #status {
-      font-size: 14px;
-      margin: 5px;
-      color: #333;
-    }
-
-    #map {
-      height: 90vh;
-      width: 100%;
-    }
-  </style>
-</head>
-
-<body>
-
-<h2>📡 Rastreador GPS em Tempo Real</h2>
-<p id="status">Aguardando dados do GPS...</p>
-
-<div id="map"></div>
-
-<script>
-  // 🗺️ Criar mapa (centro inicial Brasil)
-  const map = L.map('map').setView([-15.78, -47.93], 5);
-
-  // 🌍 OpenStreetMap
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap'
-  }).addTo(map);
-
-  // 📍 Ícone do marcador
-  const iconGPS = L.icon({
-    iconUrl: "https://cdn-icons-png.flaticon.com/512/684/684908.png",
-    iconSize: [35, 35],
-    iconAnchor: [17, 35]
-  });
-
-  let marker = null;
-
-  // 🔥 Firebase URL
-  const url = "https://bracadeiratcc-default-rtdb.firebaseio.com/gps.json";
-
-  async function atualizarGPS() {
-    try {
-      const res = await fetch(url);
-      const data = await res.json();
-
-      if (data) {
-
-        // 🔥 pega todas as chaves (push IDs)
-        const chaves = Object.keys(data);
-        const ultimaChave = chaves[chaves.length - 1];
-        const ultimoDado = data[ultimaChave];
-
-        const lat = parseFloat(ultimoDado.lat);
-        const lng = parseFloat(ultimoDado.lng);
-
-        const pos = [lat, lng];
-
-        // 📍 cria ou atualiza marcador
-        if (!marker) {
-          marker = L.marker(pos, { icon: iconGPS }).addTo(map);
-        } else {
-          marker.setLatLng(pos);
-        }
-
-        // 🎯 centraliza mapa
-        map.setView(pos, 18);
-
-        document.getElementById("status").innerText =
-          `📍 Lat: ${lat.toFixed(6)} | Lng: ${lng.toFixed(6)}`;
-
-      } else {
-        document.getElementById("status").innerText =
-          "⚠️ Nenhum dado recebido do GPS";
-      }
-
-    } catch (err) {
+    if (!data) {
       document.getElementById("status").innerText =
-        "❌ Erro ao buscar Firebase";
+        "⚠️ Firebase vazio";
+      return;
     }
+
+    const chaves = Object.keys(data);
+    const ultimaChave = chaves[chaves.length - 1];
+    const ultimoDado = data[ultimaChave];
+
+    const lat = parseFloat(ultimoDado.lat);
+    const lng = parseFloat(ultimoDado.lng);
+
+    const pos = [lat, lng];
+
+    if (!marker) {
+      marker = L.marker(pos).addTo(map);
+    } else {
+      marker.setLatLng(pos);
+    }
+
+    map.setView(pos, 18);
+
+    document.getElementById("status").innerText =
+      `📍 ${lat} | ${lng}`;
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById("status").innerText =
+      "❌ Erro ao buscar Firebase (ver console)";
   }
-
-  // 🔄 atualização em tempo real
-  setInterval(atualizarGPS, 3000);
-  atualizarGPS();
-</script>
-
-</body>
-</html>
+}
