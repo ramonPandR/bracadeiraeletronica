@@ -48,10 +48,8 @@
     attribution: '© OpenStreetMap'
   }).addTo(map);
 
-  // 📍 marcador
   let marker = null;
 
-  // 🔥 Firebase URL
   const url = "https://bracadeiratcc-default-rtdb.firebaseio.com/gps.json";
 
   async function atualizarGPS() {
@@ -59,32 +57,32 @@
       const res = await fetch(url, { cache: "no-store" });
       const data = await res.json();
 
+      console.log("Firebase bruto:", data);
+
       if (!data) {
         document.getElementById("status").innerText =
           "⚠️ Sem dados no Firebase";
         return;
       }
 
-      // 🔥 pega último registro (push)
-      const chaves = Object.keys(data);
-      const ultimaChave = chaves[chaves.length - 1];
-      const gps = data[ultimaChave];
+      // 🔥 pega TODOS os valores e evita erro de estrutura
+      const valores = Object.values(data);
+      const gps = valores[valores.length - 1];
 
-      console.log("GPS bruto:", gps);
+      console.log("Último GPS:", gps);
 
-      const lat = parseFloat(gps.lat);
-      const lng = parseFloat(gps.lng);
+      const lat = Number(gps?.lat);
+      const lng = Number(gps?.lng);
 
-      // 🚨 proteção contra erro NaN
-      if (isNaN(lat) || isNaN(lng)) {
+      // 🚨 validação forte contra NaN
+      if (!isFinite(lat) || !isFinite(lng)) {
         document.getElementById("status").innerText =
-          "⚠️ GPS inválido (NaN)";
+          "⚠️ GPS ainda não válido (aguardando fix)";
         return;
       }
 
       const pos = [lat, lng];
 
-      // 📍 cria ou atualiza marcador
       if (!marker) {
         marker = L.marker(pos).addTo(map);
       } else {
@@ -94,7 +92,7 @@
       map.setView(pos, 18);
 
       document.getElementById("status").innerText =
-        `📍 Latitude: ${lat.toFixed(6)} | Longitude: ${lng.toFixed(6)}`;
+        `📍 Lat: ${lat.toFixed(6)} | Lng: ${lng.toFixed(6)}`;
 
     } catch (err) {
       console.error(err);
@@ -103,7 +101,6 @@
     }
   }
 
-  // 🔄 atualização automática (3s)
   setInterval(atualizarGPS, 3000);
   atualizarGPS();
 </script>
