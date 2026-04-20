@@ -21,6 +21,30 @@
       margin: 10px;
     }
 
+    #link {
+      margin: 10px;
+    }
+
+    .titulo-link {
+      margin: 5px;
+      font-size: 14px;
+      color: #ccc;
+    }
+
+    #link a {
+      display: inline-block;
+      padding: 8px 15px;
+      background: #00c3ff;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    #link a:hover {
+      background: #0099cc;
+    }
+
     #status {
       padding: 10px;
       background: #222;
@@ -39,20 +63,25 @@
 <body>
 
 <h3>📡 Rastreador GPS em Tempo Real</h3>
+
+<div id="link">
+  <p class="titulo-link">🩺 Formulário Médico de Emergência</p>
+  <a href="https://sites.google.com/fiec.edu.br/prenterprisestcc/in%C3%ADcio?authuser=2&pli=1" target="_blank">
+    Acessar formulário
+  </a>
+</div>
+
 <div id="status">Inicializando...</div>
 
 <div id="map"></div>
 
 <script>
-  // 🗺️ mapa inicial
   const map = L.map('map').setView([-15.78, -47.93], 5);
 
-  // 🌙 mapa estilo escuro (muito mais bonito)
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; OpenStreetMap & CartoDB'
   }).addTo(map);
 
-  // 📍 ícone customizado
   const icon = L.icon({
     iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
     iconSize: [32, 32],
@@ -62,7 +91,6 @@
   let marker = null;
   let caminho = [];
 
-  // 🔴 linha do trajeto (criada uma vez só)
   const linha = L.polyline(caminho, { color: 'red' }).addTo(map);
 
   const url = "https://bracadeiratcc-default-rtdb.firebaseio.com/gps.json";
@@ -92,24 +120,20 @@
 
       const pos = [lat, lng];
 
-      // 📍 marcador
       if (!marker) {
         marker = L.marker(pos, { icon }).addTo(map);
       } else {
         marker.setLatLng(pos);
       }
 
-      // 🧭 adiciona ao trajeto
       caminho.push(pos);
       linha.setLatLngs(caminho);
 
-      // 🎥 animação suave
       map.flyTo(pos, 18, {
         animate: true,
         duration: 1.5
       });
 
-      // 📊 status
       document.getElementById("status").innerText =
         `📍 Lat: ${lat.toFixed(6)} | Lng: ${lng.toFixed(6)}`;
 
