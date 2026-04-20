@@ -4,42 +4,61 @@
   <meta charset="UTF-8">
   <title>Rastreador GPS</title>
 
-  <!-- Leaflet (mapa) -->
+  <!-- Leaflet (MAPA MELHORADO) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
   <style>
     body {
+      margin: 0;
       font-family: Arial;
       text-align: center;
+      background: #f2f2f2;
     }
+
+    h2 {
+      margin: 10px;
+    }
+
+    #status {
+      font-size: 14px;
+      color: #333;
+    }
+
     #map {
-      height: 500px;
+      height: 85vh;
       width: 100%;
-      margin-top: 10px;
     }
   </style>
 </head>
 
 <body>
 
-<h2>📡 Rastreador GPS em Tempo Real</h2>
-<p id="status">Aguardando dados...</p>
+<h2>📍 Rastreador GPS em Tempo Real</h2>
+<p id="status">Aguardando sinal do GPS...</p>
 
 <div id="map"></div>
 
 <script>
-  // 🗺️ Criar mapa
-  const map = L.map('map').setView([0, 0], 15);
+  // 🗺️ Criar mapa (Leaflet)
+  const map = L.map('map').setView([0, 0], 16);
 
+  // 🌍 Camada de mapa (OpenStreetMap)
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: 'GPS Tracker'
+    attribution: '© OpenStreetMap'
   }).addTo(map);
 
-  // 📍 marcador do GPS
-  let marker = L.marker([0, 0]).addTo(map);
+  // 📍 Ícone personalizado (opcional)
+  const iconGPS = L.icon({
+    iconUrl: "https://cdn-icons-png.flaticon.com/512/684/684908.png",
+    iconSize: [40, 40],
+    iconAnchor: [20, 40]
+  });
 
-  // 🔥 Firebase URL (SEU BANCO)
+  // 📌 Marcador
+  let marker = L.marker([0, 0], { icon: iconGPS }).addTo(map);
+
+  // 🔥 Firebase
   const url = "https://bracadeiratcc-default-rtdb.firebaseio.com/gps.json";
 
   async function atualizarGPS() {
@@ -51,25 +70,23 @@
         const pos = [data.lat, data.lng];
 
         marker.setLatLng(pos);
-        map.setView(pos);
+        map.setView(pos, 18); // zoom mais próximo
 
         document.getElementById("status").innerText =
-          "📍 Lat: " + data.lat + " | Lng: " + data.lng;
+          `📍 Lat: ${data.lat} | Lng: ${data.lng}`;
       } else {
         document.getElementById("status").innerText =
-          "⚠️ Sem dados do GPS";
+          "⚠️ Aguardando GPS fix...";
       }
 
     } catch (err) {
       document.getElementById("status").innerText =
-        "❌ Erro ao buscar dados";
+        "❌ Erro ao buscar dados do Firebase";
     }
   }
 
-  // 🔄 atualiza a cada 5 segundos (igual seu ESP32 manda)
+  // 🔄 Atualiza igual seu ESP32 envia
   setInterval(atualizarGPS, 5000);
-
-  // primeira execução
   atualizarGPS();
 </script>
 
