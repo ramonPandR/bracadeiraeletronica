@@ -54,8 +54,26 @@
       white-space: pre-line;
     }
 
+    #acoes {
+      margin: 10px;
+    }
+
+    #acoes button {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 6px;
+      background: #28a745;
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    #acoes button:hover {
+      background: #218838;
+    }
+
     #map {
-      height: 90vh;
+      height: 85vh;
       width: 100%;
     }
   </style>
@@ -74,6 +92,10 @@
 
 <div id="status">Inicializando...</div>
 
+<div id="acoes">
+  <button onclick="abrirRota()">Ir até localização</button>
+</div>
+
 <div id="map"></div>
 
 <script>
@@ -91,6 +113,7 @@
 
   let marker = null;
   let caminho = [];
+  let ultimaPosicao = null;
   let ultimoEnderecoTempo = 0;
   let ultimoEndereco = "";
 
@@ -142,6 +165,7 @@
       }
 
       const pos = [lat, lng];
+      ultimaPosicao = pos;
 
       if (!marker) {
         marker = L.marker(pos, { icon }).addTo(map);
@@ -170,6 +194,19 @@
       document.getElementById("status").innerText =
         "Erro ao acessar Firebase";
     }
+  }
+
+  function abrirRota() {
+    if (!ultimaPosicao) {
+      alert("Localização ainda não disponível");
+      return;
+    }
+
+    const lat = ultimaPosicao[0];
+    const lng = ultimaPosicao[1];
+
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+    window.open(url, "_blank");
   }
 
   setInterval(atualizarGPS, 3000);
