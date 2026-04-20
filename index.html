@@ -12,8 +12,9 @@
     body {
       margin: 0;
       font-family: Arial;
+      background: #111;
+      color: white;
       text-align: center;
-      background: #f2f2f2;
     }
 
     h3 {
@@ -21,8 +22,10 @@
     }
 
     #status {
-      padding: 6px;
-      background: #eee;
+      padding: 10px;
+      background: #222;
+      color: #00ff88;
+      font-family: monospace;
       font-size: 14px;
     }
 
@@ -41,14 +44,26 @@
 <div id="map"></div>
 
 <script>
-  // 🗺️ mapa inicial (Brasil)
+  // 🗺️ mapa inicial
   const map = L.map('map').setView([-15.78, -47.93], 5);
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap'
+  // 🌙 mapa estilo escuro (muito mais bonito)
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap & CartoDB'
   }).addTo(map);
 
+  // 📍 ícone customizado
+  const icon = L.icon({
+    iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+    iconSize: [32, 32],
+    iconAnchor: [16, 32]
+  });
+
   let marker = null;
+  let caminho = [];
+
+  // 🔴 linha do trajeto (criada uma vez só)
+  const linha = L.polyline(caminho, { color: 'red' }).addTo(map);
 
   const url = "https://bracadeiratcc-default-rtdb.firebaseio.com/gps.json";
 
@@ -57,40 +72,44 @@
       const res = await fetch(url, { cache: "no-store" });
       const data = await res.json();
 
-      console.log("Firebase bruto:", data);
-
       if (!data) {
         document.getElementById("status").innerText =
           "⚠️ Sem dados no Firebase";
         return;
       }
 
-      // 🔥 pega TODOS os valores e evita erro de estrutura
       const valores = Object.values(data);
       const gps = valores[valores.length - 1];
-
-      console.log("Último GPS:", gps);
 
       const lat = Number(gps?.lat);
       const lng = Number(gps?.lng);
 
-      // 🚨 validação forte contra NaN
       if (!isFinite(lat) || !isFinite(lng)) {
         document.getElementById("status").innerText =
-          "⚠️ GPS ainda não válido (aguardando fix)";
+          "⚠️ Aguardando sinal GPS válido...";
         return;
       }
 
       const pos = [lat, lng];
 
+      // 📍 marcador
       if (!marker) {
-        marker = L.marker(pos).addTo(map);
+        marker = L.marker(pos, { icon }).addTo(map);
       } else {
         marker.setLatLng(pos);
       }
 
-      map.setView(pos, 18);
+      // 🧭 adiciona ao trajeto
+      caminho.push(pos);
+      linha.setLatLngs(caminho);
 
+      // 🎥 animação suave
+      map.flyTo(pos, 18, {
+        animate: true,
+        duration: 1.5
+      });
+
+      // 📊 status
       document.getElementById("status").innerText =
         `📍 Lat: ${lat.toFixed(6)} | Lng: ${lng.toFixed(6)}`;
 
