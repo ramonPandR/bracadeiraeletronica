@@ -51,6 +51,7 @@
       color: #00ff88;
       font-family: monospace;
       font-size: 14px;
+      white-space: pre-line;
     }
 
     #map {
@@ -62,10 +63,10 @@
 
 <body>
 
-<h3>📡 Rastreador GPS em Tempo Real</h3>
+<h3>Rastreador GPS em Tempo Real</h3>
 
 <div id="link">
-  <p class="titulo-link">🩺 Formulário Médico de Emergência</p>
+  <p class="titulo-link">Formulário Médico de Emergência</p>
   <a href="https://sites.google.com/fiec.edu.br/prenterprisestcc/in%C3%ADcio?authuser=2&pli=1" target="_blank">
     Acessar formulário
   </a>
@@ -90,10 +91,32 @@
 
   let marker = null;
   let caminho = [];
+  let ultimoEnderecoTempo = 0;
+  let ultimoEndereco = "";
 
   const linha = L.polyline(caminho, { color: 'red' }).addTo(map);
 
   const url = "https://bracadeiratcc-default-rtdb.firebaseio.com/gps.json";
+
+  async function buscarEndereco(lat, lng) {
+    try {
+      const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`;
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (data.address) {
+        const rua = data.address.road || "";
+        const numero = data.address.house_number || "s/n";
+        const cidade = data.address.city || data.address.town || data.address.village || "";
+
+        return `${rua}, ${numero} - ${cidade}`;
+      }
+
+      return "Endereço aproximado não encontrado";
+    } catch {
+      return "Erro ao buscar endereço";
+    }
+  }
 
   async function atualizarGPS() {
     try {
@@ -102,7 +125,7 @@
 
       if (!data) {
         document.getElementById("status").innerText =
-          "⚠️ Sem dados no Firebase";
+          "Sem dados no Firebase";
         return;
       }
 
@@ -114,7 +137,7 @@
 
       if (!isFinite(lat) || !isFinite(lng)) {
         document.getElementById("status").innerText =
-          "⚠️ Aguardando sinal GPS válido...";
+          "Aguardando sinal GPS válido...";
         return;
       }
 
@@ -134,13 +157,18 @@
         duration: 1.5
       });
 
+      if (Date.now() - ultimoEnderecoTempo > 10000) {
+        ultimoEndereco = await buscarEndereco(lat, lng);
+        ultimoEnderecoTempo = Date.now();
+      }
+
       document.getElementById("status").innerText =
-        `📍 Lat: ${lat.toFixed(6)} | Lng: ${lng.toFixed(6)}`;
+        `Lat: ${lat.toFixed(6)} | Lng: ${lng.toFixed(6)}\n${ultimoEndereco}`;
 
     } catch (err) {
       console.error(err);
       document.getElementById("status").innerText =
-        "❌ Erro ao acessar Firebase";
+        "Erro ao acessar Firebase";
     }
   }
 
