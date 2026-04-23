@@ -66,6 +66,7 @@
       margin: 10px;
     }
 
+    /* 🔥 BOTÃO AZUL CLARO */
     #acoes button {
       display: inline-flex;
       align-items: center;
@@ -73,14 +74,14 @@
       padding: 10px 15px;
       border: none;
       border-radius: 6px;
-      background: #28a745;
+      background: #00aaff;
       color: white;
       font-size: 14px;
       cursor: pointer;
     }
 
     #acoes button:hover {
-      background: #218838;
+      background: #008ecc;
     }
 
     .icone {
@@ -171,7 +172,6 @@
 
       const valores = Object.values(data);
 
-      // 🔥 ALTERADO: 400 → 90
       const ultimos = valores.slice(-90);
 
       caminho = ultimos
@@ -185,7 +185,6 @@
       const lat = Number(gps?.lat);
       const lng = Number(gps?.lng);
 
-      // 🔥 NOVO: timestamp
       const timestamp = gps?.timestamp || "Sem horário";
 
       if (!isFinite(lat) || !isFinite(lng)) {
@@ -213,8 +212,11 @@
         ultimoEnderecoTempo = Date.now();
       }
 
-      document.getElementById("status").innerText =
-        `Lat: ${lat.toFixed(6)} | Lng: ${lng.toFixed(6)}\n${ultimoEndereco}\nÚltima atualização: ${timestamp}`;
+      // 🔥 HORÁRIO EM BRANCO
+      document.getElementById("status").innerHTML =
+        `Lat: ${lat.toFixed(6)} | Lng: ${lng.toFixed(6)}<br>
+         ${ultimoEndereco}<br>
+         Última atualização: <span style="color:#ffffff">${timestamp}</span>`;
 
     } catch (err) {
       console.error(err);
