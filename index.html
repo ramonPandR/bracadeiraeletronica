@@ -1,3 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Rastreador GPS</title>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      background: #111;
+      color: white;
+      text-align: center;
+    }
+
+    h3 {
+      margin: 10px;
+    }
+
+    #link {
+      margin: 10px;
+    }
+
+    .titulo-link {
+      margin: 5px;
+      font-size: 14px;
+      color: #ccc;
+    }
+
+    .btn-medico {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 15px;
+      background: #c0392b;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .btn-medico:hover {
+      background: #a93226;
+    }
+
+    .cruz {
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    #status {
+      padding: 10px;
+      background: #222;
+      color: #00ff88;
+      font-family: monospace;
+      font-size: 14px;
+      white-space: pre-line;
+    }
+
+    #acoes {
+      margin: 10px;
+    }
+
+    #acoes button {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 6px;
+      background: #28a745;
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    #acoes button:hover {
+      background: #218838;
+    }
+
+    .icone {
+      font-size: 16px;
+    }
+
+    #map {
+      height: 85vh;
+      width: 100%;
+    }
+  </style>
+</head>
+
+<body>
+
+<h3>Rastreador GPS em Tempo Real</h3>
+
+<div id="link">
+  <p class="titulo-link">Formulário Médico de Emergência</p>
+  <a href="https://sites.google.com/fiec.edu.br/prenterprisestcc/in%C3%ADcio?authuser=2&pli=1" target="_blank" class="btn-medico">
+    <span class="cruz">+</span> Perfil médico
+  </a>
+</div>
+
+<div id="status">Inicializando...</div>
+
+<div id="acoes">
+  <button onclick="abrirRota()">
+    <span class="icone">🚗</span> Ir até localização
+  </button>
+</div>
+
+<div id="map"></div>
+
 <script>
   const map = L.map('map').setView([-15.78, -47.93], 5);
 
@@ -19,7 +136,7 @@
 
   const linha = L.polyline([], { color: 'red' }).addTo(map);
 
-  const url = "https://bracadeiratcc-default-rtdb.firebaseio.com/gps/.json";
+  const url = "https://bracadeiratcc-default-rtdb.firebaseio.com/gps.json";
 
   async function buscarEndereco(lat, lng) {
     try {
@@ -47,44 +164,28 @@
       const data = await res.json();
 
       if (!data) {
-        document.getElementById("status").innerText = "Sem dados no Firebase";
+        document.getElementById("status").innerText =
+          "Sem dados no Firebase";
         return;
       }
 
-      // 🔥 FILTRA DADOS VÁLIDOS
-      let valores = Object.values(data).filter(p =>
-        p &&
-        isFinite(Number(p.lat)) &&
-        isFinite(Number(p.lng))
-      );
+      const valores = Object.values(data);
+      const ultimos = valores.slice(-400);
 
-      // 🔥 ORDENA COM SEGURANÇA (timestamp opcional)
-      valores.sort((a, b) => {
-        const ta = a.timestamp || "";
-        const tb = b.timestamp || "";
-        return ta.localeCompare(tb);
-      });
+      caminho = ultimos
+        .map(p => [Number(p.lat), Number(p.lng)])
+        .filter(p => isFinite(p[0]) && isFinite(p[1]));
 
-      // 🔥 LIMITA PARA 90 PONTOS
-      const ultimos = valores.slice(-90);
-
-      // 🔥 MONTA CAMINHO
-      caminho = ultimos.map(p => [Number(p.lat), Number(p.lng)]);
       linha.setLatLngs(caminho);
 
       const gps = ultimos[ultimos.length - 1];
 
-      if (!gps) {
-        document.getElementById("status").innerText = "Sem dados recentes";
-        return;
-      }
-
-      const lat = Number(gps.lat);
-      const lng = Number(gps.lng);
-      const timestamp = gps.timestamp ? gps.timestamp : "Sem horário";
+      const lat = Number(gps?.lat);
+      const lng = Number(gps?.lng);
 
       if (!isFinite(lat) || !isFinite(lng)) {
-        document.getElementById("status").innerText = "Aguardando sinal GPS válido...";
+        document.getElementById("status").innerText =
+          "Aguardando sinal GPS válido...";
         return;
       }
 
@@ -102,18 +203,18 @@
         duration: 1.5
       });
 
-      // 🔥 Atualiza endereço a cada 10s
       if (Date.now() - ultimoEnderecoTempo > 10000) {
         ultimoEndereco = await buscarEndereco(lat, lng);
         ultimoEnderecoTempo = Date.now();
       }
 
       document.getElementById("status").innerText =
-        `Lat: ${lat.toFixed(6)} | Lng: ${lng.toFixed(6)}\n${ultimoEndereco}\nÚltima atualização: ${timestamp}`;
+        `Lat: ${lat.toFixed(6)} | Lng: ${lng.toFixed(6)}\n${ultimoEndereco}`;
 
     } catch (err) {
       console.error(err);
-      document.getElementById("status").innerText = "Erro ao acessar Firebase";
+      document.getElementById("status").innerText =
+        "Erro ao acessar Firebase";
     }
   }
 
@@ -133,3 +234,6 @@
   setInterval(atualizarGPS, 3000);
   atualizarGPS();
 </script>
+
+</body>
+</html>
