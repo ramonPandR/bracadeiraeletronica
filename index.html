@@ -58,7 +58,7 @@
       // 🔥 ordena por timestamp (garante último correto)
       valores.sort((a, b) => (a.timestamp || "").localeCompare(b.timestamp || ""));
 
-      const ultimos = valores.slice(-400);
+      const ultimos = valores.slice(-90);
 
       caminho = ultimos
         .map(p => [Number(p.lat), Number(p.lng)])
