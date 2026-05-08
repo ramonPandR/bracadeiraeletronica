@@ -22,27 +22,64 @@
       margin: 10px;
     }
 
-    #link {
+    /* ÁREA DOS BOTÕES */
+
+    #topoBotoes {
+
+      display: flex;
+
+      justify-content: center;
+
+      align-items: center;
+
+      gap: 10px;
+
+      flex-wrap: wrap;
+
       margin: 10px;
+    }
+
+    .grupo-botao {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     .titulo-link {
       margin: 5px;
-      font-size: 14px;
+      font-size: 13px;
       color: #ccc;
     }
 
+    /* BOTÃO PERFIL MÉDICO */
+
     .btn-medico {
+
       display: inline-flex;
+
       align-items: center;
+
+      justify-content: center;
+
       gap: 8px;
+
       padding: 10px 15px;
+
       background: #c0392b;
+
       color: white;
+
       text-decoration: none;
+
       border-radius: 6px;
+
       font-size: 14px;
+
       font-weight: bold;
+
+      min-width: 180px;
+
+      box-sizing: border-box;
     }
 
     .btn-medico:hover {
@@ -54,16 +91,65 @@
       font-weight: bold;
     }
 
-    #status {
-      padding: 10px;
-      background: #222;
-      color: #00ff88;
-      font-family: monospace;
+    /* BOTÃO ROTA */
+
+    .btn-rota {
+
+      display: inline-flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      gap: 8px;
+
+      padding: 10px 15px;
+
+      border: none;
+
+      border-radius: 6px;
+
+      background: #00aaff;
+
+      color: white;
+
       font-size: 14px;
+
+      font-weight: bold;
+
+      cursor: pointer;
+
+      min-width: 180px;
+
+      box-sizing: border-box;
+    }
+
+    .btn-rota:hover {
+      background: #008ecc;
+    }
+
+    .icone {
+      font-size: 16px;
+    }
+
+    /* STATUS */
+
+    #status {
+
+      padding: 10px;
+
+      background: #222;
+
+      color: #00ff88;
+
+      font-family: monospace;
+
+      font-size: 14px;
+
       white-space: pre-line;
     }
 
-    /* ABA DE HISTÓRICO */
+    /* ABA HISTÓRICO */
 
     #abaQuedas {
       margin: 10px;
@@ -119,45 +205,10 @@
       color: #ffccaa;
     }
 
-    #acoes {
-      margin: 10px;
-    }
-
-    /* BOTÃO AZUL */
-
-    #acoes button {
-
-      display: inline-flex;
-
-      align-items: center;
-
-      gap: 8px;
-
-      padding: 10px 15px;
-
-      border: none;
-
-      border-radius: 6px;
-
-      background: #00aaff;
-
-      color: white;
-
-      font-size: 14px;
-
-      cursor: pointer;
-    }
-
-    #acoes button:hover {
-      background: #008ecc;
-    }
-
-    .icone {
-      font-size: 16px;
-    }
+    /* MAPA */
 
     #map {
-      height: 85vh;
+      height: 82vh;
       width: 100%;
     }
 
@@ -168,22 +219,56 @@
 
 <h3>Rastreador GPS em Tempo Real</h3>
 
-<div id="link">
+<!-- BOTÕES LADO A LADO -->
 
-  <p class="titulo-link">
-    Formulário Médico de Emergência
-  </p>
+<div id="topoBotoes">
 
-  <a href="https://sites.google.com/fiec.edu.br/prenterprisestcc/in%C3%ADcio?authuser=2&pli=1"
-     target="_blank"
-     class="btn-medico">
+  <!-- PERFIL MÉDICO -->
 
-    <span class="cruz">+</span>
-    Perfil médico
+  <div class="grupo-botao">
 
-  </a>
+    <p class="titulo-link">
+
+      Formulário Médico
+
+    </p>
+
+    <a href="https://sites.google.com/fiec.edu.br/prenterprisestcc/in%C3%ADcio?authuser=2&pli=1"
+       target="_blank"
+       class="btn-medico">
+
+      <span class="cruz">+</span>
+
+      Perfil médico
+
+    </a>
+
+  </div>
+
+  <!-- BOTÃO ROTA -->
+
+  <div class="grupo-botao">
+
+    <p class="titulo-link">
+
+      Navegação GPS
+
+    </p>
+
+    <button class="btn-rota"
+            onclick="abrirRota()">
+
+      <span class="icone">🚗</span>
+
+      Ir até localização
+
+    </button>
+
+  </div>
 
 </div>
+
+<!-- STATUS -->
 
 <div id="status">
 
@@ -191,7 +276,7 @@
 
 </div>
 
-<!-- ABA DE HISTÓRICO -->
+<!-- ABA HISTÓRICO -->
 
 <div id="abaQuedas">
 
@@ -214,17 +299,7 @@
 
 </div>
 
-<div id="acoes">
-
-  <button onclick="abrirRota()">
-
-    <span class="icone">🚗</span>
-
-    Ir até localização
-
-  </button>
-
-</div>
+<!-- MAPA -->
 
 <div id="map"></div>
 
@@ -265,7 +340,7 @@
 
   let ultimoEndereco = "";
 
-  /* HISTÓRICO DE QUEDAS */
+  /* HISTÓRICO */
 
   let historicoQuedas = [];
 
@@ -368,7 +443,7 @@
       const timestamp =
         gps?.timestamp || "Sem horário";
 
-      /* DETECÇÃO DE PERDA */
+      /* DETECTA QUEDA */
 
       if (
         ultimoTimestamp &&
@@ -388,7 +463,6 @@
         const diferencaMin =
           (atual - anterior) / 60000;
 
-        // MAIS DE 6 MINUTOS
         if (diferencaMin > 6) {
 
           historicoQuedas.unshift({
@@ -404,7 +478,6 @@
 
           });
 
-          // mantém só 10
           if (
             historicoQuedas.length > 10
           ) {
@@ -545,7 +618,7 @@
     `).join('');
   }
 
-  /* ABRIR / FECHAR ABA */
+  /* ABRIR / FECHAR HISTÓRICO */
 
   function toggleQuedas() {
 
@@ -568,6 +641,8 @@
         "block";
     }
   }
+
+  /* GOOGLE MAPS */
 
   function abrirRota() {
 
