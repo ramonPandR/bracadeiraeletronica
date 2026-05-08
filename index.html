@@ -9,6 +9,7 @@
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
   <style>
+
     body {
       margin: 0;
       font-family: Arial;
@@ -62,15 +63,60 @@
       white-space: pre-line;
     }
 
-    #quedas {
-      background:#1b1b1b;
-      margin:10px;
-      padding:10px;
-      border-radius:8px;
-      text-align:left;
-      font-size:13px;
-      max-height:180px;
-      overflow-y:auto;
+    /* ABA DE HISTÓRICO */
+
+    #abaQuedas {
+      margin: 10px;
+    }
+
+    #btnQuedas {
+
+      width: 100%;
+
+      background: #2b2b2b;
+
+      color: #ffffff;
+
+      border: none;
+
+      padding: 12px;
+
+      border-radius: 8px;
+
+      font-size: 14px;
+
+      cursor: pointer;
+
+      text-align: left;
+
+      font-weight: bold;
+    }
+
+    #btnQuedas:hover {
+      background: #383838;
+    }
+
+    #quedasConteudo {
+
+      display: none;
+
+      margin-top: 8px;
+
+      background: #1b1b1b;
+
+      border-radius: 8px;
+
+      padding: 10px;
+
+      max-height: 220px;
+
+      overflow-y: auto;
+
+      text-align: left;
+
+      font-size: 13px;
+
+      color: #ffccaa;
     }
 
     #acoes {
@@ -78,16 +124,27 @@
     }
 
     /* BOTÃO AZUL */
+
     #acoes button {
+
       display: inline-flex;
+
       align-items: center;
+
       gap: 8px;
+
       padding: 10px 15px;
+
       border: none;
+
       border-radius: 6px;
+
       background: #00aaff;
+
       color: white;
+
       font-size: 14px;
+
       cursor: pointer;
     }
 
@@ -103,6 +160,7 @@
       height: 85vh;
       width: 100%;
     }
+
   </style>
 </head>
 
@@ -111,7 +169,10 @@
 <h3>Rastreador GPS em Tempo Real</h3>
 
 <div id="link">
-  <p class="titulo-link">Formulário Médico de Emergência</p>
+
+  <p class="titulo-link">
+    Formulário Médico de Emergência
+  </p>
 
   <a href="https://sites.google.com/fiec.edu.br/prenterprisestcc/in%C3%ADcio?authuser=2&pli=1"
      target="_blank"
@@ -119,49 +180,79 @@
 
     <span class="cruz">+</span>
     Perfil médico
+
   </a>
+
 </div>
 
-<div id="status">Inicializando...</div>
+<div id="status">
 
-<!-- HISTÓRICO DE PERDA -->
-<div id="quedas">
-  <b>Histórico de perda de sinal:</b>
+  Inicializando...
 
-  <div id="listaQuedas"
-       style="margin-top:8px; color:#ffccaa;">
+</div>
 
-    Nenhuma perda detectada
+<!-- ABA DE HISTÓRICO -->
+
+<div id="abaQuedas">
+
+  <button id="btnQuedas"
+          onclick="toggleQuedas()">
+
+    ⚠ Histórico de perda de sinal
+
+  </button>
+
+  <div id="quedasConteudo">
+
+    <div id="listaQuedas">
+
+      Nenhuma perda detectada
+
+    </div>
 
   </div>
+
 </div>
 
 <div id="acoes">
+
   <button onclick="abrirRota()">
+
     <span class="icone">🚗</span>
+
     Ir até localização
+
   </button>
+
 </div>
 
 <div id="map"></div>
 
 <script>
 
-  const map = L.map('map').setView([-15.78, -47.93], 5);
+  const map =
+    L.map('map').setView(
+      [-15.78, -47.93],
+      5
+    );
 
   L.tileLayer(
     'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
     {
-      attribution: '&copy; OpenStreetMap & CartoDB'
+      attribution:
+        '&copy; OpenStreetMap & CartoDB'
     }
   ).addTo(map);
 
   const icon = L.icon({
+
     iconUrl:
       'https://cdn-icons-png.flaticon.com/512/684/684908.png',
 
     iconSize: [32, 32],
+
     iconAnchor: [16, 32]
+
   });
 
   let marker = null;
@@ -175,13 +266,15 @@
   let ultimoEndereco = "";
 
   /* HISTÓRICO DE QUEDAS */
+
   let historicoQuedas = [];
 
   let ultimoTimestamp = null;
 
-  const linha = L.polyline([], {
-    color: 'red'
-  }).addTo(map);
+  const linha =
+    L.polyline([], {
+      color: 'red'
+    }).addTo(map);
 
   const url =
     "https://bracadeiratcc-default-rtdb.firebaseio.com/gps.json";
@@ -199,7 +292,8 @@
 
       if (data.address) {
 
-        const rua = data.address.road || "";
+        const rua =
+          data.address.road || "";
 
         const numero =
           data.address.house_number || "s/n";
@@ -225,23 +319,31 @@
     try {
 
       const res =
-        await fetch(url, { cache: "no-store" });
+        await fetch(
+          url,
+          { cache: "no-store" }
+        );
 
-      const data = await res.json();
+      const data =
+        await res.json();
 
       if (!data) {
 
-        document.getElementById("status").innerText =
+        document.getElementById("status")
+          .innerText =
           "Sem dados no Firebase";
 
         return;
       }
 
-      const valores = Object.values(data);
+      const valores =
+        Object.values(data);
 
-      const ultimos = valores.slice(-90);
+      const ultimos =
+        valores.slice(-90);
 
       caminho = ultimos
+
         .map(p => [
           Number(p.lat),
           Number(p.lng)
@@ -257,41 +359,55 @@
       const gps =
         ultimos[ultimos.length - 1];
 
-      const lat = Number(gps?.lat);
+      const lat =
+        Number(gps?.lat);
 
-      const lng = Number(gps?.lng);
+      const lng =
+        Number(gps?.lng);
 
       const timestamp =
         gps?.timestamp || "Sem horário";
 
-      /* DETECÇÃO DE QUEDA */
+      /* DETECÇÃO DE PERDA */
 
-      if (ultimoTimestamp && gps?.timestamp) {
+      if (
+        ultimoTimestamp &&
+        gps?.timestamp
+      ) {
 
         const anterior =
-          new Date(ultimoTimestamp).getTime();
+          new Date(
+            ultimoTimestamp
+          ).getTime();
 
         const atual =
-          new Date(gps.timestamp).getTime();
+          new Date(
+            gps.timestamp
+          ).getTime();
 
         const diferencaMin =
           (atual - anterior) / 60000;
 
-        // Mais de 6 minutos sem sinal
+        // MAIS DE 6 MINUTOS
         if (diferencaMin > 6) {
 
           historicoQuedas.unshift({
 
-            inicio: ultimoTimestamp,
+            inicio:
+              ultimoTimestamp,
 
-            retorno: gps.timestamp,
+            retorno:
+              gps.timestamp,
 
-            tempo: diferencaMin.toFixed(1)
+            tempo:
+              diferencaMin.toFixed(1)
 
           });
 
-          // mantém apenas as últimas 10
-          if (historicoQuedas.length > 10) {
+          // mantém só 10
+          if (
+            historicoQuedas.length > 10
+          ) {
 
             historicoQuedas.pop();
           }
@@ -300,11 +416,16 @@
         }
       }
 
-      ultimoTimestamp = gps?.timestamp;
+      ultimoTimestamp =
+        gps?.timestamp;
 
-      if (!isFinite(lat) || !isFinite(lng)) {
+      if (
+        !isFinite(lat) ||
+        !isFinite(lng)
+      ) {
 
-        document.getElementById("status").innerText =
+        document.getElementById("status")
+          .innerText =
           "Aguardando sinal GPS válido...";
 
         return;
@@ -317,8 +438,10 @@
       if (!marker) {
 
         marker =
-          L.marker(pos, { icon })
-          .addTo(map);
+          L.marker(
+            pos,
+            { icon }
+          ).addTo(map);
 
       } else {
 
@@ -334,41 +457,60 @@
       });
 
       if (
-        Date.now() - ultimoEnderecoTempo > 10000
+        Date.now() -
+        ultimoEnderecoTempo >
+        10000
       ) {
 
         ultimoEndereco =
-          await buscarEndereco(lat, lng);
+          await buscarEndereco(
+            lat,
+            lng
+          );
 
-        ultimoEnderecoTempo = Date.now();
+        ultimoEnderecoTempo =
+          Date.now();
       }
 
-      document.getElementById("status").innerHTML =
+      document.getElementById("status")
+        .innerHTML =
 
-        `Lat: ${lat.toFixed(6)} | Lng: ${lng.toFixed(6)}<br>
+        `Lat: ${lat.toFixed(6)} |
+         Lng: ${lng.toFixed(6)}<br>
+
          ${ultimoEndereco}<br>
-         Última atualização:
-         <span style="color:#ffffff">
-           ${timestamp}
-         </span>`;
 
-    } catch (err) {
+         Última atualização:
+
+         <span style="color:#ffffff">
+
+           ${timestamp}
+
+         </span>`;
+    }
+
+    catch (err) {
 
       console.error(err);
 
-      document.getElementById("status").innerText =
+      document.getElementById("status")
+        .innerText =
         "Erro ao acessar Firebase";
     }
   }
 
-  /* ATUALIZA HISTÓRICO VISUAL */
+  /* HISTÓRICO VISUAL */
 
   function atualizarHistorico() {
 
     const div =
-      document.getElementById("listaQuedas");
+      document.getElementById(
+        "listaQuedas"
+      );
 
-    if (historicoQuedas.length === 0) {
+    if (
+      historicoQuedas.length === 0
+    ) {
 
       div.innerHTML =
         "Nenhuma perda detectada";
@@ -376,7 +518,8 @@
       return;
     }
 
-    div.innerHTML = historicoQuedas.map(item => `
+    div.innerHTML =
+      historicoQuedas.map(item => `
 
       <div style="
         margin-bottom:8px;
@@ -402,6 +545,30 @@
     `).join('');
   }
 
+  /* ABRIR / FECHAR ABA */
+
+  function toggleQuedas() {
+
+    const conteudo =
+      document.getElementById(
+        "quedasConteudo"
+      );
+
+    if (
+      conteudo.style.display ===
+      "block"
+    ) {
+
+      conteudo.style.display =
+        "none";
+
+    } else {
+
+      conteudo.style.display =
+        "block";
+    }
+  }
+
   function abrirRota() {
 
     if (!ultimaPosicao) {
@@ -413,9 +580,11 @@
       return;
     }
 
-    const lat = ultimaPosicao[0];
+    const lat =
+      ultimaPosicao[0];
 
-    const lng = ultimaPosicao[1];
+    const lng =
+      ultimaPosicao[1];
 
     const url =
       `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
@@ -423,12 +592,14 @@
     window.open(url, "_blank");
   }
 
-  setInterval(atualizarGPS, 3000);
+  setInterval(
+    atualizarGPS,
+    3000
+  );
 
   atualizarGPS();
 
 </script>
 
 </body>
-</html>
 </html>
