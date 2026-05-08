@@ -62,11 +62,22 @@
       white-space: pre-line;
     }
 
+    #quedas {
+      background:#1b1b1b;
+      margin:10px;
+      padding:10px;
+      border-radius:8px;
+      text-align:left;
+      font-size:13px;
+      max-height:180px;
+      overflow-y:auto;
+    }
+
     #acoes {
       margin: 10px;
     }
 
-    /* 🔥 BOTÃO AZUL CLARO */
+    /* BOTÃO AZUL */
     #acoes button {
       display: inline-flex;
       align-items: center;
@@ -101,72 +112,128 @@
 
 <div id="link">
   <p class="titulo-link">Formulário Médico de Emergência</p>
-  <a href="https://sites.google.com/fiec.edu.br/prenterprisestcc/in%C3%ADcio?authuser=2&pli=1" target="_blank" class="btn-medico">
-    <span class="cruz">+</span> Perfil médico
+
+  <a href="https://sites.google.com/fiec.edu.br/prenterprisestcc/in%C3%ADcio?authuser=2&pli=1"
+     target="_blank"
+     class="btn-medico">
+
+    <span class="cruz">+</span>
+    Perfil médico
   </a>
 </div>
 
 <div id="status">Inicializando...</div>
 
+<!-- HISTÓRICO DE PERDA -->
+<div id="quedas">
+  <b>Histórico de perda de sinal:</b>
+
+  <div id="listaQuedas"
+       style="margin-top:8px; color:#ffccaa;">
+
+    Nenhuma perda detectada
+
+  </div>
+</div>
+
 <div id="acoes">
   <button onclick="abrirRota()">
-    <span class="icone">🚗</span> Ir até localização
+    <span class="icone">🚗</span>
+    Ir até localização
   </button>
 </div>
 
 <div id="map"></div>
 
 <script>
+
   const map = L.map('map').setView([-15.78, -47.93], 5);
 
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; OpenStreetMap & CartoDB'
-  }).addTo(map);
+  L.tileLayer(
+    'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    {
+      attribution: '&copy; OpenStreetMap & CartoDB'
+    }
+  ).addTo(map);
 
   const icon = L.icon({
-    iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+    iconUrl:
+      'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+
     iconSize: [32, 32],
     iconAnchor: [16, 32]
   });
 
   let marker = null;
+
   let caminho = [];
+
   let ultimaPosicao = null;
+
   let ultimoEnderecoTempo = 0;
+
   let ultimoEndereco = "";
 
-  const linha = L.polyline([], { color: 'red' }).addTo(map);
+  /* HISTÓRICO DE QUEDAS */
+  let historicoQuedas = [];
 
-  const url = "https://bracadeiratcc-default-rtdb.firebaseio.com/gps.json";
+  let ultimoTimestamp = null;
+
+  const linha = L.polyline([], {
+    color: 'red'
+  }).addTo(map);
+
+  const url =
+    "https://bracadeiratcc-default-rtdb.firebaseio.com/gps.json";
 
   async function buscarEndereco(lat, lng) {
+
     try {
-      const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`;
+
+      const url =
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`;
+
       const res = await fetch(url);
+
       const data = await res.json();
 
       if (data.address) {
+
         const rua = data.address.road || "";
-        const numero = data.address.house_number || "s/n";
-        const cidade = data.address.city || data.address.town || data.address.village || "";
+
+        const numero =
+          data.address.house_number || "s/n";
+
+        const cidade =
+          data.address.city ||
+          data.address.town ||
+          data.address.village || "";
 
         return `${rua}, ${numero} - ${cidade}`;
       }
 
       return "Endereço aproximado não encontrado";
+
     } catch {
+
       return "Erro ao buscar endereço";
     }
   }
 
   async function atualizarGPS() {
+
     try {
-      const res = await fetch(url, { cache: "no-store" });
+
+      const res =
+        await fetch(url, { cache: "no-store" });
+
       const data = await res.json();
 
       if (!data) {
+
         document.getElementById("status").innerText =
           "Sem dados no Firebase";
+
         return;
       }
 
@@ -175,72 +242,193 @@
       const ultimos = valores.slice(-90);
 
       caminho = ultimos
-        .map(p => [Number(p.lat), Number(p.lng)])
-        .filter(p => isFinite(p[0]) && isFinite(p[1]));
+        .map(p => [
+          Number(p.lat),
+          Number(p.lng)
+        ])
+
+        .filter(p =>
+          isFinite(p[0]) &&
+          isFinite(p[1])
+        );
 
       linha.setLatLngs(caminho);
 
-      const gps = ultimos[ultimos.length - 1];
+      const gps =
+        ultimos[ultimos.length - 1];
 
       const lat = Number(gps?.lat);
+
       const lng = Number(gps?.lng);
 
-      const timestamp = gps?.timestamp || "Sem horário";
+      const timestamp =
+        gps?.timestamp || "Sem horário";
+
+      /* DETECÇÃO DE QUEDA */
+
+      if (ultimoTimestamp && gps?.timestamp) {
+
+        const anterior =
+          new Date(ultimoTimestamp).getTime();
+
+        const atual =
+          new Date(gps.timestamp).getTime();
+
+        const diferencaMin =
+          (atual - anterior) / 60000;
+
+        // Mais de 6 minutos sem sinal
+        if (diferencaMin > 6) {
+
+          historicoQuedas.unshift({
+
+            inicio: ultimoTimestamp,
+
+            retorno: gps.timestamp,
+
+            tempo: diferencaMin.toFixed(1)
+
+          });
+
+          // mantém apenas as últimas 10
+          if (historicoQuedas.length > 10) {
+
+            historicoQuedas.pop();
+          }
+
+          atualizarHistorico();
+        }
+      }
+
+      ultimoTimestamp = gps?.timestamp;
 
       if (!isFinite(lat) || !isFinite(lng)) {
+
         document.getElementById("status").innerText =
           "Aguardando sinal GPS válido...";
+
         return;
       }
 
       const pos = [lat, lng];
+
       ultimaPosicao = pos;
 
       if (!marker) {
-        marker = L.marker(pos, { icon }).addTo(map);
+
+        marker =
+          L.marker(pos, { icon })
+          .addTo(map);
+
       } else {
+
         marker.setLatLng(pos);
       }
 
       map.flyTo(pos, 18, {
+
         animate: true,
+
         duration: 1.5
+
       });
 
-      if (Date.now() - ultimoEnderecoTempo > 10000) {
-        ultimoEndereco = await buscarEndereco(lat, lng);
+      if (
+        Date.now() - ultimoEnderecoTempo > 10000
+      ) {
+
+        ultimoEndereco =
+          await buscarEndereco(lat, lng);
+
         ultimoEnderecoTempo = Date.now();
       }
 
-      // 🔥 HORÁRIO EM BRANCO
       document.getElementById("status").innerHTML =
+
         `Lat: ${lat.toFixed(6)} | Lng: ${lng.toFixed(6)}<br>
          ${ultimoEndereco}<br>
-         Última atualização: <span style="color:#ffffff">${timestamp}</span>`;
+         Última atualização:
+         <span style="color:#ffffff">
+           ${timestamp}
+         </span>`;
 
     } catch (err) {
+
       console.error(err);
+
       document.getElementById("status").innerText =
         "Erro ao acessar Firebase";
     }
   }
 
+  /* ATUALIZA HISTÓRICO VISUAL */
+
+  function atualizarHistorico() {
+
+    const div =
+      document.getElementById("listaQuedas");
+
+    if (historicoQuedas.length === 0) {
+
+      div.innerHTML =
+        "Nenhuma perda detectada";
+
+      return;
+    }
+
+    div.innerHTML = historicoQuedas.map(item => `
+
+      <div style="
+        margin-bottom:8px;
+        padding:8px;
+        background:#2a2a2a;
+        border-left:4px solid #ff4444;
+        border-radius:4px;
+      ">
+
+        <b>Sinal perdido</b><br>
+
+        Último ponto:
+        ${item.inicio}<br>
+
+        Retornou:
+        ${item.retorno}<br>
+
+        Tempo sem sinal:
+        ${item.tempo} min
+
+      </div>
+
+    `).join('');
+  }
+
   function abrirRota() {
+
     if (!ultimaPosicao) {
-      alert("Localização ainda não disponível");
+
+      alert(
+        "Localização ainda não disponível"
+      );
+
       return;
     }
 
     const lat = ultimaPosicao[0];
+
     const lng = ultimaPosicao[1];
 
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+    const url =
+      `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+
     window.open(url, "_blank");
   }
 
   setInterval(atualizarGPS, 3000);
+
   atualizarGPS();
+
 </script>
 
 </body>
+</html>
 </html>
